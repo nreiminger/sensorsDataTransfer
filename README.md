@@ -3,7 +3,7 @@
 
 
 
-![diagramm](https://github.com/nreiminger/sensorsDataTransfer/blob/main/Arduino_Android_diagram.pdf?raw=true "Title")
+![diagramm](https://github.com/nreiminger/sensorsDataTransfer/blob/main/Arduino_Android_diagram.pdf)
 
 
 

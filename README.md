@@ -20,8 +20,12 @@
     - config : contient les configurations pour le fonctionnement du dispositif, le nombre de jour à sauvegarder, l'interval de temps entre chaque mesure. 
   
   ## Les execptions
-
-
+  Suite aux mesures, des exceptions peuvent être lancé: 
+    - Si les valeurs du capteurs existent mais que aucune valeurs pour le GPS il met 0,00000; 0,00000 pour les coordonnées
+    - Si les valeurs du capteurs n'existent pas mais que les valeurs du GPS exitsent, au bout de 10 secondes, une alarme et lancé 
+    - Si ni les valeurs du capteur, ni les valeurs du GPS n'existent une alarme doit être lancé. 
+    
+   Les alarmes sont ecritent dans le fichier `alarme`
 
 ## Application android : 
 

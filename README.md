@@ -13,11 +13,11 @@
 
 ## Arduino :
   ## Les fichiers
-    - La carte arduino a une carte SD. Cette carte arduino aura 4 fichiers. 
-      - data : contient les données des 7 derniers jours
-      - Log : contient la dernière date qui a été ajouter dans la base de données
-      - Alarme : contient les alarme qui peut etre declanché. 
-      - config : contient les configurations pour le fonctionnement du dispositif, le nombre de jour à sauvegarder, l'interval de temps entre chaque mesure. 
+  - La carte arduino a une carte SD. Cette carte arduino aura 4 fichiers. 
+    - data : contient les données des 7 derniers jours
+    - Log : contient la dernière date qui a été ajouter dans la base de données
+    - Alarme : contient les alarme qui peut etre declanché. 
+    - config : contient les configurations pour le fonctionnement du dispositif, le nombre de jour à sauvegarder, l'interval de temps entre chaque mesure. 
   
   ## Les execptions
 

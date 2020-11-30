@@ -43,7 +43,6 @@ void loop()
   while (Serial1.available() > 0){
     if (gps.encode(Serial1.read())){
       displayInfo(); //get the gps data 
-      sensor(); //get the sps30 data 
     }
   }
 
@@ -63,6 +62,43 @@ void loop()
 
 void displayInfo()
 {
+  Serial.println("--------------");
+  Serial.print("  Date/Time: ");
+  if (gps.date.isValid())
+  {
+    //////get the date data 
+    Serial.print(gps.date.month());
+    Serial.print(F("/"));
+    Serial.print(gps.date.day());
+    Serial.print(F("/"));
+    Serial.print(gps.date.year());
+  }
+  else
+  {
+    Serial.print("0/0/2000");
+  }
+  
+  Serial.print(F(" "));
+  if (gps.time.isValid())
+  {
+    /////get the hours data 
+    if (gps.time.hour() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.hour());
+    Serial.print(F(":"));
+    if (gps.time.minute() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.minute());
+    Serial.print(F(":"));
+    if (gps.time.second() < 10) Serial.print(F("0"));
+    Serial.print(gps.time.second());
+  }
+  else
+  {
+    Serial.print(F("00:00:00"));
+  }
+  Serial.print(" ");
+  delay(1500);
+  Serial.print(sensor());
+  Serial.print(" ");
   Serial.print(F("Location: ")); 
   if ( gps.location.isValid() && gps.location.age() < 5000 )
   {
@@ -76,53 +112,19 @@ void displayInfo()
   }
   else
   {
-    Serial.print(F("INVALID"));
+    Serial.print("000.000000");
+    Serial.print(" ");
+    Serial.print("000.000000");
+    
   }
-
-  Serial.print(F("  Date/Time: "));
-  if (gps.date.isValid())
-  {
-    //////get the date data 
-    Serial.print(gps.date.month());
-    Serial.print(F("/"));
-    Serial.print(gps.date.day());
-    Serial.print(F("/"));
-    Serial.print(gps.date.year());
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.print(F(" "));
-  if (gps.time.isValid())
-  {
-    /////get the hours data 
-    if (gps.time.hour() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.hour());
-    Serial.print(F(":"));
-    if (gps.time.minute() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.minute());
-    Serial.print(F(":"));
-    if (gps.time.second() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.second());
-    Serial.print(F("."));
-    if (gps.time.centisecond() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.centisecond());
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-  Serial.println("");
-
+    Serial.println("");
 }
 
 
 //////////////////////////////////////////////////////////
 
 
-void sensor() {
+String sensor() {
 /*
 // RESET device
   delay(1000);
@@ -143,7 +145,6 @@ void sensor() {
   Wire1.write(CalcCrc(data));
   Wire1.endTransmission();
   
-  delay(10000);
 /*
 //Start Fan Cleaning
   Serial.println("clean");
@@ -154,7 +155,7 @@ void sensor() {
   delay(100);
 */
  //while(1){
-  Serial.println(" ---------- ");
+  String res = "";
   //Read data ready flag
   SetPointer(0x02, 0x02);
   Wire1.requestFrom(Address, 3);
@@ -165,13 +166,15 @@ void sensor() {
 
   if (w2==0x01){              //0x01: new measurements ready to read
     SetPointer(0x03,0x00);
-    Wire1.requestFrom(Address, 60);
+    Wire1.requestFrom(Address, 24);
     for(int i=0;i<60;i++) { ND[i]=Wire1.read();                        
 //    for(int i=0;i<30;i++) { ND[i]=Wire.read();     //without Wire.h lib modification only first 5 values
     //Serial.print(i);Serial.print(": ");Serial.println(ND[i],HEX);
     }
     // Result: PM1.0/PM2.5/PM4.0,PM10[Î¼g/mÂ³] , PM0.5,PM1.0/PM2.5/PM4.0,PM10 [[#/cmÂ³], Typical Particle Size [Î¼m]
-    for(int i=0;i<60;i++) { 
+    int pm=1;
+    
+    for(int i=0;i<24;i++) { 
        if ((i+1)%3==0)
        {
          byte datax[2]={ND[i-2], ND[i-1]};
@@ -186,18 +189,17 @@ void sensor() {
            tmp= (tmp<<8) + ND[i-1];
            //Serial.print(tmp,HEX);Serial.print(" ");
            measure= (*(float*) &tmp);
-           Serial.print(measure); Serial.print(" ");
+           if(pm != 3){
+            res += 'A';
+            res += round(measure);  
+           }
            tmp=0;
-         }
-         
+           pm+=1;
+         } 
        }
       }
-      
-
+      return res;
   }
-  Serial.println("");
-
-  delay(2000);
 
 // }
 

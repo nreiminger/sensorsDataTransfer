@@ -115,8 +115,10 @@ void displayInfo()
   {
     dh = gps.date.year();
     dh += "/";
+    if(gps.date.month()<10) dh += "0";
     dh += gps.date.month();
     dh += "/";
+    if(gps.date.day()<10) dh+="0";
     dh += gps.date.day();
     //////get the date data 
     Serial.print(gps.date.month());
@@ -339,9 +341,12 @@ void connect_callback(uint16_t conn_handle)
 
   Serial.print("Connected to ");
   Serial.println(central_name);
+  while(1){
   while (Serial1.available() > 0){
     if (gps.encode(Serial1.read())){
       displayInfo(); //get the gps data 
+      delay(100);
+      }  
     }
   }
   

@@ -25,7 +25,7 @@ BLEUart bleuart; // uart over ble
 BLEBas  blebas;  // battery
 
 bool connected =false;
-  
+bool heure_date = true;  
 void setup()
 {
    //enabling VDD_SW power rail to give 5V source to the dolfin board
@@ -72,8 +72,9 @@ void setup()
 
 void loop() {
   // This sketch displays information every time a new sentence is correctly encoded.
+  delay(2000);
   while (Serial1.available() > 0){
-    myFile = SD.open("date.txt", FILE_WRITE);
+    myFile = SD.open("data.txt", FILE_WRITE);
     if(myFile){
       if (gps.encode(Serial1.read())){
         displayInfo();
@@ -91,8 +92,6 @@ void loop() {
 
 void displayInfo()
 {
-  
-
   Serial.print(F("  Date/Time: "));
   if (gps.date.isValid())
   {
@@ -102,42 +101,59 @@ void displayInfo()
     Serial.print(gps.date.day());
     Serial.print(F("/"));
     Serial.print(gps.date.year());
+    myFile.print(gps.date.month());
+    myFile.print(F("/"));
+    myFile.print(gps.date.day()); 
+    myFile.print(F("/"));
+    myFile.print(gps.date.year());
+    myFile.print(";");
+    heure_date=true;
   }
   else
   {
-        digitalWrite(LED_BLUE,LOW);
+    digitalWrite(LED_BLUE,LOW);
     Serial.print(F("INVALID"));
+    heure_date=false;
   }
 
   Serial.print(F(" "));
+  
   if (gps.time.isValid())
   {
-    if (gps.time.hour() < 10) Serial.print(F("0"));
+    if (gps.time.hour() < 10) {
+      Serial.print(F("0"));
+      myFile.print(F("0"));
+    }
     Serial.print(gps.time.hour());
     Serial.print(F(":"));
-    if (gps.time.minute() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.minute());
-    Serial.print(F(":"));
-    if (gps.time.second() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.second());
-     myFile.print(F("0")); //permet de mettre le 0 pour avoir toujours deux chiffres
     myFile.print(gps.time.hour());
     myFile.print(F(":"));
-    if (gps.time.minute() < 10) 
-    myFile.print(F("0")); //permet de mettre le 0 pour avoir toujours deux chiffres
+    if (gps.time.minute() < 10) {
+      Serial.print(F("0"));
+      myFile.print(F("0"));
+    }
+    Serial.print(gps.time.minute());
+    Serial.print(F(":"));
     myFile.print(gps.time.minute());
     myFile.print(F(":"));
-    if (gps.time.second() < 10) 
-    myFile.print(F("0")); //permet de mettre le 0 pour avoir tjs deux chiffres 
+    if (gps.time.second() < 10) {
+      Serial.print(F("0"));
+      myFile.print(F("0"));
+    }
+    Serial.print(gps.time.second());
     myFile.print(gps.time.second());
-    myFile.println();
+    myFile.print(";");
+
   }
   else
   {
     Serial.print(F("INVALID"));
+    heure_date=false;
   }
   Serial.print(" ");
   Serial.print(sensor());
+  if(heure_date)
+    myFile.print(sensor());
   Serial.print(" ");
   Serial.print(F("Location: ")); 
   if ( gps.location.isValid() && gps.location.age() < 5000 )
@@ -145,12 +161,17 @@ void displayInfo()
     Serial.print(gps.location.lat(), 6);
     Serial.print(F(","));
     Serial.print(gps.location.lng(), 6);
+    myFile.print(gps.location.lat(), 6);
+    myFile.print(F(","));
+    myFile.print(gps.location.lng(), 6);
   }
   else
   {
     Serial.print(F("INVALID"));
   }
   Serial.println();
+  if(heure_date)
+    myFile.println();
 }
 
 String sensor() {

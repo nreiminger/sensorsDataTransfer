@@ -118,6 +118,8 @@ void displayInfo(){
       d += "0/0/2000";
     }
     unsigned long mi =millis();
+    delay(5000);
+    milli += mi;
     Serial.print(d);
     Serial.print(F(" "));
     
@@ -136,8 +138,13 @@ void displayInfo(){
     }
     Serial.print(h);
     Serial.print(" ");
-    delay(5000);
-    pm += sensor();
+    String s = sensor();
+    Serial.println(s == "");
+    if(s == ""){
+      pm += "A0A0A0";
+    }else{
+      pm += s;  
+    }
     Serial.print(pm);
     Serial.print(" ");    
     if ( gps.location.isValid() && gps.location.age() < 5000 )
@@ -160,26 +167,29 @@ void displayInfo(){
     Serial.print(lt);
     Serial.print(";");
     Serial.print(lg);
-    
-    myFile.print(d);
-    myFile.print(";");
-    myFile.print(h);
-    myFile.print(";");
-    myFile.print(pm);
-    myFile.print(";");
-    myFile.print(lt);
-    myFile.print(";");
-    myFile.print(lg);
-    myFile.print(";");
-    myFile.println(mi);
-    if(connected){
-      bleuart.print(d);
-      bleuart.print(h);
-      bleuart.print(pm);
-      bleuart.print(lt);
-      bleuart.print(lg);
-      bleuart.print(milli);
+    Serial.print(milli);
+    if(pm != "pm=A0A0A0"){
+      myFile.print(d);
+      myFile.print(";");
+      myFile.print(h);
+      myFile.print(";");
+      myFile.print(pm);
+      myFile.print(";");
+      myFile.print(lt);
+      myFile.print(";");
+      myFile.print(lg);
+      myFile.print(";");
+      myFile.println(milli);
+      if(connected){
+        bleuart.print(d);
+        bleuart.print(h);
+        bleuart.print(pm);
+        bleuart.print(lt);
+        bleuart.print(lg);
+        bleuart.print(milli);
+      }  
     }
+    
     //Fermeture du fichier pour enregirstrement
       myFile.close();
   }

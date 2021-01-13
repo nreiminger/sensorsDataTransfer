@@ -1,17 +1,22 @@
 #include <TinyGPS++.h>
 #include "Wire.h"
-
+#include <SPI.h>
+#include <SdFat.h>
+#include <bluefruit.h>
+#include <Adafruit_LittleFS.h>
+#include <InternalFileSystem.h>
+ 
  int Address = 0x69; // device address of SPS30 (fixed).
-
  byte w1, w2,w3;
  byte ND[60];
  long tmp;
  float measure;
+ 
 // The TinyGPS++ object
 TinyGPSPlus gps;
-#include <bluefruit.h>
-#include <Adafruit_LittleFS.h>
-#include <InternalFileSystem.h>
+SdFat SD(&SPI1);
+#define SD_CS_PIN SS1
+File myFile;
 
 // BLE Service
 BLEDfu  bledfu;  // OTA DFU service
@@ -19,9 +24,10 @@ BLEDis  bledis;  // device information
 BLEUart bleuart; // uart over ble
 BLEBas  blebas;  // battery
 
-void setup()
-{
-   //enabling VDD_SW power rail to give 5V source to the dolfin board
+bool connected =false;
+
+void setup() {
+     //enabling VDD_SW power rail to give 5V source to the dolfin board
  pinMode(SW_VDD_EN, OUTPUT);
  digitalWrite(SW_VDD_EN,HIGH);
  //enabling 5V_sensor power rail to switch on the sensor
@@ -43,13 +49,7 @@ void setup()
   digitalWrite(XLB_EN, HIGH);
   delay(1000);
 
-  //BLE
-    Serial.begin(115200);
 
-#if CFG_DEBUG
-  // Blocking wait for connection when debug mode is enabled via IDE
-  while ( !Serial ) yield();
-#endif
     // Setup the BLE LED to be enabled on CONNECT
   // Note: This is actually the default behavior, but provided
   // here in case you want to control this LED manually via PIN 19
@@ -64,9 +64,9 @@ void setup()
   Bluefruit.setTxPower(4);    // Check bluefruit.h for supported values
   Bluefruit.setName("RSens.V1.007");
   //Bluefruit.setName(getMcuUniqueID()); // useful testing with multiple central connections
-  Bluefruit.Periph.setConnectCallback(connect_callback);
-  Bluefruit.Periph.setDisconnectCallback(disconnect_callback);
-
+  Bluefruit.Periph.setConnectCallback(connect_callback); //calbback utilisé lorsqu'un appareil se connecte a la carte 
+  Bluefruit.Periph.setDisconnectCallback(disconnect_callback); //callbacl appeler lorsqu'un appareil se deconnecte de la carte
+  
   // To be consistent OTA DFU should be added first if it exists
   bledfu.begin();
 
@@ -76,123 +76,115 @@ void setup()
 
   // Set up and start advertising
   startAdv();
-  
+
+  pinMode(SDCARD_EN_PIN,OUTPUT);
+  digitalWrite(SDCARD_EN_PIN, HIGH); 
+
+  Serial.print("Initializing SD card...");
+
+  if (!SD.begin(SD_CS_PIN)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
+ 
 }
 
-void loop()
-{
-  /*// This sketch displays information every time a new sentence is correctly encoded.
-  while (Serial1.available() > 0){
-    if (gps.encode(Serial1.read())){
-      displayInfo(); //get the gps data 
-    }
-  }
-
-  if (millis() > 5000 && gps.charsProcessed() < 10)
-  {
-    Serial.println(F("No GPS detected: check wiring."));
-    while(true);
-  }*/
-
-   
-
+void loop() {
+  displayInfo();
 }
-
-
-  
-/////////////////////////////////
-
-void displayInfo()
-{
-  Serial.println("--------------");
-  Serial.print("  Date/Time: ");
-  String dh ="";
-  String heure="";
-  String pm="";
-  String latit="";
-  String longit="";
-  if (gps.date.isValid())
-  {
-    dh = gps.date.year();
-    dh += "/";
-    if(gps.date.month()<10) dh += "0";
-    dh += gps.date.month();
-    dh += "/";
-    if(gps.date.day()<10) dh+="0";
-    dh += gps.date.day();
-    //////get the date data 
-    Serial.print(gps.date.month());
-    Serial.print(F("/"));
-    Serial.print(gps.date.day());
-    Serial.print(F("/"));
-    Serial.print(gps.date.year());
-  }
-  else
-  {
-    Serial.print("0/0/2000");
-    dh = "0/0/2020";
-  }
-  
-  Serial.print(F(" "));
-  
-  if (gps.time.isValid())
-  {
-    /////get the hours data 
-    if (gps.time.hour() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.hour());
-    Serial.print(F(":"));
-    if (gps.time.minute() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.minute());
-    Serial.print(F(":"));
-    if (gps.time.second() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.second());
-    heure = gps.time.hour();
-    heure += ":";
-    heure += gps.time.minute();
-    heure +=":";
-    heure += gps.time.second();
-  }
-  else
-  {
-    Serial.print(F("00:00:00"));
-  }
-  Serial.print(" ");
-  
-  delay(5000);
-  pm = sensor();
-  Serial.print(sensor());
-  Serial.print(" ");
-  
-  Serial.print(F("Location: ")); 
-  
-  if ( gps.location.isValid() && gps.location.age() < 5000 )
-  {
-    //////get the location data 
-    Serial.print(gps.location.lat(), 6);
-    latit = gps.location.lat();
-    Serial.print(F(","));
-    Serial.print(gps.location.lng(), 6);
-    longit = gps.location.lng();
-    digitalWrite(LED_BLUE,HIGH);
+void displayInfo(){
+   Serial.println("--------------");
+   myFile = SD.open("test.txt",FILE_WRITE);
+  if (myFile) {
+    String d ="d=";
+    String h="h=";
+    String pm="pm=";
+    String lt="lt=";
+    String lg="lg=";
+    String milli="m=";
+    digitalWrite(LED_RED,HIGH);
     delay(200);
-    digitalWrite(LED_BLUE,LOW);
-  }
-  else
-  {
-    latit="000.000000";
-    longit = "000.000000";
-    Serial.print("000.000000");
+    digitalWrite(LED_RED,LOW);
+    if(gps.date.isValid()){
+      d += gps.date.day(); 
+      d+="/";
+      d += gps.date.month();
+      d += "/";
+      d += gps.date.year();
+    }
+    else
+    {
+      d += "0/0/2000";
+    }
+    unsigned long mi =millis();
+    Serial.print(d);
+    Serial.print(F(" "));
+    
+    if (gps.time.isValid())
+    {
+      /////get the hours data 
+      h += gps.time.hour();
+      h += ":";
+      h += gps.time.minute();
+      h += ":";
+      h += gps.time.second();
+    }
+    else
+    {
+      h += "0:0:0";
+    }
+    Serial.print(h);
     Serial.print(" ");
-    Serial.print("000.000000");
+    delay(5000);
+    pm += sensor();
+    Serial.print(pm);
+    Serial.print(" ");    
+    if ( gps.location.isValid() && gps.location.age() < 5000 )
+    {
+      //////get the location data 
+      Serial.print(gps.location.lat(), 6);
+      lt += gps.location.lat();
+      Serial.print(F(","));
+      Serial.print(gps.location.lng(), 6);
+      lg += gps.location.lng();
+      digitalWrite(LED_BLUE,HIGH);
+      delay(200);
+      digitalWrite(LED_BLUE,LOW);
+    }
+    else
+    {
+      lt +="00.000000";
+      lg += "00.000000";
+    }
+    Serial.print(lt);
+    Serial.print(";");
+    Serial.print(lg);
+    
+    myFile.print(d);
+    myFile.print(";");
+    myFile.print(h);
+    myFile.print(";");
+    myFile.print(pm);
+    myFile.print(";");
+    myFile.print(lt);
+    myFile.print(";");
+    myFile.print(lg);
+    myFile.print(";");
+    myFile.println(mi);
+    if(connected){
+      bleuart.print(d);
+      bleuart.print(h);
+      bleuart.print(pm);
+      bleuart.print(lt);
+      bleuart.print(lg);
+      bleuart.print(milli);
+    }
+    //Fermeture du fichier pour enregirstrement
+      myFile.close();
   }
-  Serial.println("");
-  bleuart.print(dh);
-  bleuart.print(heure);
-  bleuart.print(pm);
-  bleuart.print(latit);
-  bleuart.print(longit);
+  
 }
-
 
 //////////////////////////////////////////////////////////
 
@@ -287,7 +279,7 @@ void SetPointer(byte P1, byte P2)
   Wire1.write(P1);
   Wire1.write(P2);
   Wire1.endTransmission();
-  }
+}
 
 
 // from datasheet:
@@ -338,24 +330,24 @@ void connect_callback(uint16_t conn_handle)
 
   char central_name[32] = { 0 };
   connection->getPeerName(central_name, sizeof(central_name));
-
+  connected = true;
   Serial.print("Connected to ");
   Serial.println(central_name);
   while(1){
-  while (Serial1.available() > 0){
-    if (gps.encode(Serial1.read())){
-      displayInfo(); //get the gps data 
-      delay(100);
+    while (Serial1.available() > 0){
+      if (gps.encode(Serial1.read())){
+        delay(300);
+        displayInfo(); //get the gps data 
       }  
     }
   }
-  
 }
+
 void disconnect_callback(uint16_t conn_handle, uint8_t reason)
 {
   (void) conn_handle;
   (void) reason;
-
+  connected = false;
   Serial.println();
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
 }

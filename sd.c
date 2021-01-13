@@ -13,10 +13,11 @@ SdFat SD(&SPI1);
 File myFile;
 /**
  * lecture d'un fichier qui enregistre les données des capteurs, les données les plus ancienne sont stocké au début du fichier. 
- * Pour avoir la valeur la valeur de la fichier la plus recente on passe par une Pile (LIFO). La dernière valeur enpiler dans la pile est la mesure la plus recente. 
+ * Pour avoir la valeur la valeur de la fichier la plus ;l;llpopopop
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
  */
-void setup() {
-  // demmare la sérialisationqui va permettre d'afficher les réponse a l'utilisateur. 
+void setup(){
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -45,12 +46,32 @@ void setup() {
      stack.push(data);
    }
   }
+  
   //tant que le fichier la liste n'est pas vide, depiler la valeur se trouvant au sommet.
   //Comme la dernière valeur empiler est la dernière ligne du fichier, la permière valeur a être dépiler est la valeur la plus recente. 
-  while(!stack.isEmpty()){
-    Serial.println(stack.pop());  
+  int diffMillis = 0;
+  String prev = stack.pop();
+  Serial.println(diffMillis);
+  Serial.println(prev);
+  String mi1= getValue(prev,';',5);
+  int m1 = getValue(mi1,'=',1).toInt();
+  bool stop = false; 
+  while(!stack.isEmpty() && !stop){
+    String suiv = stack.pop();
+    String mi2=getValue(suiv,';',5);
+    int m2 = getValue(mi2,'=',1).toInt(); 
+    if(m2 > m1){
+      stop = true;
+    }else{
+      diffMillis += m1-m2;
+      Serial.println(diffMillis);
+      Serial.println(suiv); 
+      m1 = m2;
+    }
   }
 }
+
+
 
 /**
  * fonction qui va simuler un split

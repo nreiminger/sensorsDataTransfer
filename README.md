@@ -11,21 +11,16 @@
   ## Les fichiers
   - La carte arduino a une carte SD. Cette carte arduino aura 4 fichiers. 
     - data : contient les données des 7 derniers jours
-    - Log : contient la dernière date qui a été ajouter dans la base de données
-    - Alarme : contient les alarme qui peut etre declanché. 
     - config : contient les configurations pour le fonctionnement du dispositif (lecture du fichier )
-      - le nombre de jour à sauvegarder
+      - l'id du capteur, pour les tests c'est le dpolhin 7 qui a été tester
       - l'interval de temps entre chaque mesure. 
   
   ## Les execptions
   Suite aux mesures, des exceptions peuvent être lancé: 
   - Si les valeurs du capteurs existent mais que aucune valeurs pour le GPS il met 0,00000; 0,00000 pour les coordonnées
-  - Si les valeurs du capteurs n'existent pas mais que les valeurs du GPS exitsent, au bout de 10 secondes, une alarme et lancé 
-  - Si ni les valeurs du capteur, ni les valeurs du GPS n'existent une alarme doit être lancé. 
-    
-   Les alarmes sont ecritent dans le fichier `alarme`
-   
-   ## Suppression des données en dehors de la plage de la semaine
+  - Si les valeurs du capeteurs existent que la date/heure renseigné par le GPS sont invalide ou egale à `0/0/2000`/`0:0:0` on prendra comme date la valeur de millis fourni par Arduino.
+  
+ ## Suppression des données en dehors de la plage de la semaine ( je ne sais pas encore comment proceder puisque à l'intérieur les valeurs du gps concernant la date/heure sont invalide) 
    Un processus va permettre de supprimer les données du fichier `data` si TS(data) - TS(log) > 7. 
    Pour la suppression on pourrai utilser un fichier temporaire
    - Recopier toutes les données comprises dans cette plage nommée `temp`
@@ -38,10 +33,7 @@
 ## Application android : 
 
 Insertion dans la base de données :
-Le fichier log contient la date de la dernière  donnée du capteur
-- Si TS(actuelle) - TS (log) > 7 :
-Aucune donnée sur la carte SD, il faut aller la date de la première mesure enregistrer sur la carte SD. 
-- Si TS(actuelle) - TS(log) <= 7 :
-Chercher les valeurs qui sont entre TS(log) et TS(actuelle)
-
+  A l'allumage de l'application, lorsque le téléphone se connecte à la carte Arduino la valeur de epoch() (date courante) est notée dans les sharePréfences, cette donnée va permettre de recalculer la date d'une mesure si la date fourni par le GPS est invalide. 
+  - Chaque données, sont ensuite lu de la plus recente à la plus an ancienne. Chaque ligne de la carte SD, représante chaqu'une mesure mais sont rengé de la plus recente ancienne a la plus ancienne, donc il faut renverser le fichier. En placant que ligne dans une List, la date la plus recente ce trouve ensuite au debut sommet de la List. 
+  - Chaque composante de chaque ligne sont ensuiet envoyé a l'application mobile, précédée par un préfixe permettant de les reperée ("d=","h=","pm=","lt=","lg=","m="). A la reception de chaque composante, il sont placé dans un objet permettant de les saugarder jusqu'a l'envoye de la requete. La seul variable non envoyé, la valeur du millis, préfixé par "m=" sera utilsé pour recalculé, a l'aide de la date courante enregistrer dans le localStorage, la date si celle ci n'est pas correct, ou quel n'est pas vide. Si cette valeur est null cela signifie que nous somme directement connecté avec le téléphone donc nous utiliserons la date courante du téléphone.   
 

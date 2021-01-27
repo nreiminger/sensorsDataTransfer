@@ -1,5 +1,5 @@
 # sensorsDataTransfer
-
+  IL FAUT LANCER ARDUINO EN MODE SUDO SI ON EST SUR LINUX
 
 
 

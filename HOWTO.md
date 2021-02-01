@@ -24,15 +24,15 @@ A ce stade là, vous pouvez tester si la configuration de la carte est bien fait
 ```
 Si la compiliation ne passe pas, veullez verifier que vous avez bien selectionner la carte Flipper dans le menu `Tools > Board > Strataggem nrf52 board > Stataggem Flipper nrf82840 board` 
 ![selectCart](https://github.com/nreiminger/sensorsDataTransfer/blob/main/boardChoose.png)
-## Installation des différantes livraibries neccesaire pour la confilation du sketch : 
-Pour installer une librairie nous avons deux méthodes soit:
-- Installer la librairie directement depuis l'IDE, en passant dans par `SKETCH > Include Library > Manage Libraries ...`
-- Soit en incluant directement le fichier zipper de la librairies qui peuvent être téléchagées directement gitlab. 
+## Installation des différantes bibliotheques neccesaire pour la confilation du sketch : 
+Pour installer une bibliotheque nous avons deux méthodes soit:
+- Installer la bibliotheque directement depuis l'IDE, en passant dans par `SKETCH > Include Library > Manage Libraries ...`
+- Soit en incluant directement le fichier zipper de la bibliotheque qui peuvent être téléchagées directement depuis gitlab. 
 
-Voici la liste des librairies necessaire pour la conpilation du programe : 
+Voici la liste des bibliotheque necessaire pour la conpilation du programme : 
 1. SdFat Library (SdFat by Bill Greiman, tested version: 1.1.4)
 
-    Pour utiliser cette librairie, il faut changer la configuration par defaut, dans le fichier SdFatConfig.h :
+    Pour utiliser cette bibliotheque, il faut changer la configuration par defaut, dans le fichier SdFatConfig.h :
     - #define USE_STANDARD_SPI_LIBRARY 2 
     - #define SD_HAS_CUSTOM_SPI 2
 2. [TinyGPSPlus](https://github.com/mikalhart/TinyGPSPlus) Library

@@ -26,6 +26,8 @@ BLEUart bleuart; // uart over ble
 BLEBas  blebas;  // battery
 
 bool connected = false;
+String name = "RSens.V1.";
+bool history = false;
 
 void setup() {
   //enabling VDD_SW power rail to give 5V source to the dolfin board
@@ -43,14 +45,33 @@ void setup() {
   Wire1.begin(); // Initiate the Wire1 instance for the I2C communication
   Serial1.begin(9600); //Initialize the Serial1 from the UART communication
   Serial.begin(115200);
-
+  pinMode(SDCARD_EN_PIN, OUTPUT);
+  digitalWrite(SDCARD_EN_PIN, HIGH);
+  
   delay(100);
   //enabling XLB_VDD power rail to give power to the module
   pinMode(XLB_EN, OUTPUT);
   digitalWrite(XLB_EN, HIGH);
   delay(1000);
 
+   Serial.print("Initializing SD card...");
 
+  if (!SD.begin(SD_CS_PIN)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
+
+
+  myFile = SD.open("config");
+  if (myFile) {
+    name+= getValue(myFile.readStringUntil('\n'),'=',1);
+    Serial.print(name.c_str());
+    myFile.close();
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening config.txt");
+  }
   // Setup the BLE LED to be enabled on CONNECT
   // Note: This is actually the default behavior, but provided
   // here in case you want to control this LED manually via PIN 19
@@ -63,7 +84,7 @@ void setup() {
 
   Bluefruit.begin();
   Bluefruit.setTxPower(4);    // Check bluefruit.h for supported values
-  Bluefruit.setName("RSens.V1.007");
+  Bluefruit.setName(name.c_str());
   //Bluefruit.setName(getMcuUniqueID()); // useful testing with multiple central connections
   Bluefruit.Periph.setConnectCallback(connect_callback); //calbback utilisé lorsqu'un appareil se connecte a la carte
   Bluefruit.Periph.setDisconnectCallback(disconnect_callback); //callbacl appeler lorsqu'un appareil se deconnecte de la carte
@@ -76,26 +97,26 @@ void setup() {
 
 
   // Set up and start advertising
-  startAdv();
-
-  pinMode(SDCARD_EN_PIN, OUTPUT);
-  digitalWrite(SDCARD_EN_PIN, HIGH);
-
-  Serial.print("Initializing SD card...");
-
-  if (!SD.begin(SD_CS_PIN)) {
-    Serial.println("initialization failed!");
-    return;
+  startAdv();  
+  
+  //ecrire "end" pour indiquer que c'est le debut de la mesure
+  myFile = SD.open("test.txt", FILE_WRITE);
+  if(myFile){
+    myFile.println("end");
+    myFile.close();
   }
-  Serial.println("initialization done.");
-
 }
 
 void loop() {
-  displayInfo();
+  if(history){
+    Serial.println("histor");
+    readLastData();
+    history=false;  
+  }
+  displayInfo();  
 }
-void displayInfo() {
-  Serial.println("--------------");
+
+void displayInfo() {  
   myFile = SD.open("test.txt", FILE_WRITE);
   if (myFile) {
     String d = "d=";
@@ -121,8 +142,7 @@ void displayInfo() {
     delay(5000);
     unsigned long mi = millis();
     milli += mi;
-    Serial.print(d);
-    Serial.print(F(" "));
+    
 
     if (gps.time.isValid())
     {
@@ -136,17 +156,14 @@ void displayInfo() {
     else
     {
       h += "0:0:0";
-    }
-    Serial.print(h);
-    Serial.print(" ");
+    }   
     String s = sensor();
     if (s == "") {
       pm += "A0A0A0";
     } else {
       pm += s;
     }
-    Serial.print(pm);
-    Serial.print(" ");
+   
     if ( gps.location.isValid() && gps.location.age() < 5000 )
     {
       //////get the location data
@@ -164,10 +181,18 @@ void displayInfo() {
       lt += "00.000000";
       lg += "00.000000";
     }
+    Serial.println("--------");
+    /*Serial.print(d);
+    Serial.print(F(" "));
+    Serial.print(h);
+    Serial.print(" ");
+    Serial.print(pm);
+    Serial.print(" ");
     Serial.print(lt);
-    Serial.print(";");
+    Serial.print(" ");
     Serial.print(lg);
-    Serial.print(milli);
+    Serial.print(milli);*/
+    
     if (pm != "pm=A0A0A0") {
       myFile.print(String(d));
       myFile.print(";");
@@ -190,7 +215,6 @@ void displayInfo() {
         bleuart.print(milli);
       }
     }
-
     //Fermeture du fichier pour enregirstrement
     myFile.close();
   }
@@ -287,6 +311,7 @@ String sensor() {
 
 void readLastData() {
   // Ouverture de fichier en mode lecture
+  Serial.println("last");
   myFile = SD.open("test.txt", FILE_READ);
   //instanciation de la pile qui va acceullir toutes les mesures
   StackList <String> stack;
@@ -298,19 +323,24 @@ void readLastData() {
       stack.push(data);
     }
   }
-
+  myFile.close();
+  //ecriture d'un flag pour spécifier a quelle endroit est ce qu'on a fini de lire le fichier
+  myFile = SD.open("test.txt", FILE_WRITE);
+  if(myFile){
+    Serial.println("end");
+    myFile.println("end");
+    myFile.close();
+  }
   //tant que le fichier la liste n'est pas vide, depiler la valeur se trouvant au sommet.
   //Comme la dernière valeur empiler est la dernière ligne du fichier, la permière valeur a être dépiler est la valeur la plus recente.
-
   int diffMillis = 0;
   String prev = stack.pop();
-  Serial.println(prev);
+  Serial.println(prev+"*******");
   for (int i = 0; i < 5; i++) {
     bleuart.print(String(getValue(prev, ';', i)));
   }
   bleuart.print("m=0");
   bleuart.print("**********");
-  Serial.println(prev);
   String mi1 = getValue(prev, ';', 5);
   int m1 = getValue(mi1, '=', 1).toInt();
   bool stop = false;
@@ -319,21 +349,21 @@ void readLastData() {
     String suiv = stack.pop();
     String mi2 = getValue(suiv, ';', 5);
     int m2 = getValue(mi2, '=', 1).toInt();
-    if (m2 > m1) {
+    if (m2 > m1 || suiv == "end") {
       stop = true;
     } else {
       diffMillis += m1 - m2;
       for (int j = 0; j < 5; j++) {
+        Serial.print(String(getValue(suiv, ';', j))+";");
         bleuart.print(String(getValue(suiv, ';', j)));
       }
       m += diffMillis;
       bleuart.print(m);
-      bleuart.print("**********");
-      Serial.println(suiv);
+      bleuart.println("**********");
+      Serial.println("*********");
       m1 = m2;
     }
   }
-  myFile.close();
 }
 
 
@@ -413,25 +443,28 @@ void connect_callback(uint16_t conn_handle)
 
   char central_name[32] = { 0 };
   connection->getPeerName(central_name, sizeof(central_name));
-  connected = true;
+
   Serial.print("Connected to ");
   Serial.println(central_name);
-  readLastData();
-  while (1) {
-    while (Serial1.available() > 0) {
-      if (gps.encode(Serial1.read())) {
-        delay(300);
-        displayInfo(); //get the gps data
-      }
-    }
-  }
+  connected = true;
+  history = true;
+  Serial.println(history);
 }
 
+/**
+ * Callback invoked when a connection is dropped
+ * @param conn_handle connection where this event happens
+ * @param reason is a BLE_HCI_STATUS_CODE which can be found in ble_hci.h
+ */
 void disconnect_callback(uint16_t conn_handle, uint8_t reason)
 {
   (void) conn_handle;
   (void) reason;
-  connected = false;
-  Serial.println();
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
+  myFile = SD.open("test.txt", FILE_WRITE);
+  if(myFile){
+    Serial.println("end");
+    myFile.println("end");
+    myFile.close();
+  }
 }

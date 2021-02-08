@@ -21,25 +21,33 @@ void readLastData() {
     myFile.println("end");
     myFile.close();
   }
+  bool stop = false;
   //tant que le fichier la liste n'est pas vide, depiler la valeur se trouvant au sommet.
   //Comme la dernière valeur empiler est la dernière ligne du fichier, la permière valeur a être dépiler est la valeur la plus recente.
   int diffMillis = 0;
+  int m1; //valeur precedante
+  int m2; //valeur courante
+  
   String prev = stack.pop();
-  Serial.println(prev + "*******");
-  for (int i = 0; i < 5; i++) {
-    bleuart.print(String(getValue(prev, ';', i)));
+  if(prev.substring(0,3)=="end"){ //si la dernière ligne du fichier (date la plus recente) et égale a end c'est a dire qu'auncune mesure n'a encore été éffecté
+    stop = true;
+  }else{
+    Serial.println(prev + "*******");
+    for (int i = 0; i < 5; i++) {
+      bleuart.print(String(getValue(prev, ';', i)));
+    }
+    bleuart.print("m=0"); 
+    bleuart.print("**********");
+    String mi1 = getValue(prev, ';', 5);
+    m1 = getValue(mi1, '=', 1).toInt();
   }
-  bleuart.print("m=0");
-  bleuart.print("**********");
-  String mi1 = getValue(prev, ';', 5);
-  int m1 = getValue(mi1, '=', 1).toInt();
-  bool stop = false;
+  
   while (!stack.isEmpty() && !stop) {
     String m = "m=";
     String suiv = stack.pop();
     String mi2 = getValue(suiv, ';', 5);
-    int m2 = getValue(mi2, '=', 1).toInt();
-    if (m2 > m1 || suiv == "end") {
+    m2 = getValue(mi2, '=', 1).toInt();
+    if (m2 > m1 || suiv.substring(0,3) == "end") {
       stop = true;
     } else {
       diffMillis += m1 - m2;

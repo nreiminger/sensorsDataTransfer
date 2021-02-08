@@ -129,8 +129,7 @@ void sendData() {
       myFile.println(data.date+";"+data.time+";"+data.pms+";"+data.lattitude+";"+data.longitude+";"+data.millis);  
     }
     myFile.close(); //enregistrement sur la carte SD. Sans fermer le fichier, celui-ci ne save pas 
-    
-    milli = "m=";    
+    String milli = "m=";    
     if (connected) { //si connecté envoie des données
       bleuart.print(data.date);
       bleuart.print(data.time);

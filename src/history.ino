@@ -1,7 +1,7 @@
-
 void readLastData() {
+   Serial.println("---------Connected : "+String(bleuart.available()));
   // Ouverture de fichier en mode lecture
-  Serial.println("last");
+  Serial.println("History reading");
   myFile = SD.open("test.txt", FILE_READ);
   //instanciation de la pile qui va acceullir toutes les mesures
   StackList <String> stack;
@@ -17,7 +17,6 @@ void readLastData() {
   //ecriture d'un flag pour spécifier a quelle endroit est ce qu'on a fini de lire le fichier
   myFile = SD.open("test.txt", FILE_WRITE);
   if (myFile) {
-    Serial.println("end");
     myFile.println("end");
     myFile.close();
   }

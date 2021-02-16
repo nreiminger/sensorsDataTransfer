@@ -1,4 +1,5 @@
 //press Ctrl+/ to uncomment
+
 #include <TinyGPS++.h>
 #include "Wire.h"
 #include <SPI.h>
@@ -27,7 +28,6 @@ BLEDis  bledis;  // device information
 BLEUart bleuart; // uart over ble
 BLEBas  blebas;  // battery
 
-bool connected = false; //permet de determinr si on est connecté ou pas 
 String name = "RSens.V1."; //permet de donné le debut du nom de l'appareil, il va être complété par un id
 bool history = false; //permet de determiner si on a le droit de recuperer d'historique (stocké sur la carte SD), on ne peux recuperer l'historique que lorsqu'un se connecte. 
 
@@ -64,11 +64,11 @@ void setup() {
   }
   Serial.println("initialization done.");
 
-
+  //ouverture du fichier de configuration pour definir le nom du device, c'est ID qui est important
   myFile = SD.open("config");
   if (myFile) {
     name += getValue(myFile.readStringUntil('\n'), '=', 1);
-    Serial.print(name.c_str());
+    Serial.println(name.c_str());
     myFile.close();
   } else {
     // if the file didn't open, print an error:
@@ -111,7 +111,11 @@ void setup() {
 
 void loop() {
   if (history) {
-    Serial.println("history");
+    Serial.println("*En attente de connexion : "+String(bleuart.notifyEnabled()));
+    while(!bleuart.notifyEnabled()){
+      ;
+    }
+    Serial.println("*Connecter : "+String(bleuart.notifyEnabled()));
     readLastData();
     history = false;
   }
@@ -129,8 +133,9 @@ void sendData() {
       myFile.println(data.date+";"+data.time+";"+data.pms+";"+data.lattitude+";"+data.longitude+";"+data.millis);  
     }
     myFile.close(); //enregistrement sur la carte SD. Sans fermer le fichier, celui-ci ne save pas 
-    String milli = "m=";    
-    if (connected) { //si connecté envoie des données
+    String milli = "m=";  
+    Serial.println("Connected : "+String(bleuart.notifyEnabled()));
+    if (bleuart.notifyEnabled()) { //si connecté envoie des données
       bleuart.print(data.date);
       bleuart.print(data.time);
       bleuart.print(data.pms);
@@ -142,7 +147,6 @@ void sendData() {
 }
 
 //////////////////////////////////////////////////////////
-
 /**
    fonction qui va simuler un split commencant a 1.
 */
@@ -225,9 +229,7 @@ void connect_callback(uint16_t conn_handle)
 
   Serial.print("Connected to ");
   Serial.println(central_name);
-  connected = true;
   history = true;
-  Serial.println(history);
 }
 
 /**
@@ -242,7 +244,6 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
   myFile = SD.open("test.txt", FILE_WRITE);
   if (myFile) {
-    Serial.println("end");
     myFile.println("end");
     myFile.close();
   }

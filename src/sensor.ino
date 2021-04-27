@@ -114,9 +114,6 @@ void sensorGPS(Value* data){
     time = "0:0:0";
   }
   
-  //millis  
-  unsigned long mi = millis();
-
    //pm
   String pm = sensorSPS30();
   if (pm == "") {
@@ -141,5 +138,4 @@ void sensorGPS(Value* data){
   data->pms += pm;
   data->lattitude += lt;
   data->longitude += lg;
-  data->millis += mi;   
 }

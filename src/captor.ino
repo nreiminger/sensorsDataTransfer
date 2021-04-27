@@ -30,6 +30,7 @@ BLEBas  blebas;  // battery
 
 String name = "RSens.V1."; //permet de donné le debut du nom de l'appareil, il va être complété par un id
 bool history = false; //permet de determiner si on a le droit de recuperer d'historique (stocké sur la carte SD), on ne peux recuperer l'historique que lorsqu'un se connecte. 
+String lines = "";
 
 void setup() {
   //enabling VDD_SW power rail to give 5V source to the dolfin board
@@ -74,6 +75,20 @@ void setup() {
     // if the file didn't open, print an error:
     Serial.println("error opening config.txt");
   }
+  if(SD.exists("test.txt") == 0 ){
+    myFile = SD.open("test.txt",FILE_WRITE);
+    myFile.close();
+  }
+  //lecture de toutes les lignes
+  myFile = SD.open("test.txt");
+    if(myFile){
+      //get all the line from the file
+      while(myFile.available()){
+        lines += (char)myFile.read();
+    }
+  }
+  myFile.close();
+  Serial.println("Reading former value .....");
   // Setup the BLE LED to be enabled on CONNECT
   // Note: This is actually the default behavior, but provided
   // here in case you want to control this LED manually via PIN 19
@@ -97,45 +112,44 @@ void setup() {
   // Configure and Start BLE Uart Service
   bleuart.begin();
 
-
   // Set up and start advertising
   startAdv();
-
-  //ecrire "end" pour indiquer que c'est le debut de la mesure
-  myFile = SD.open("test.txt", FILE_WRITE);
-  if (myFile) {
-    myFile.println("end");
-    myFile.close();
-  }
 }
 
 void loop() {
   if (history) {
     Serial.println("*En attente de connexion : "+String(bleuart.notifyEnabled()));
-    while(!bleuart.notifyEnabled()){
+    while(bleuart.notifyEnabled() == 0){
       ;
     }
     Serial.println("*Connecter : "+String(bleuart.notifyEnabled()));
-    readLastData();
-    history = false;
+    if(bleuart.notifyEnabled()){
+      readLastData();
+      history = false;
+    }
   }
-  delay(5000);
   sendData();
+  delay(5000);  
 }
 
 void sendData() {
-  myFile = SD.open("test.txt", FILE_WRITE);
+  myFile = SD.open("test.txt", O_RDWR);
   if (myFile) {
-    //struct ou va etre placé toute 
     Value data;
+    (&data)->millis += millis();  
+    //struct ou va etre placé toute 
     sensorGPS(&data);
     if(data.pms != "pm=A0A0A0"){
-      myFile.println(data.date+";"+data.time+";"+data.pms+";"+data.lattitude+";"+data.longitude+";"+data.millis);  
+      myFile.seek(0);
+      Serial.println(data.date+";"+data.time+";"+data.pms+";"+data.lattitude+";"+data.longitude+";"+data.millis);
+      lines = data.date+";"+data.time+";"+data.pms+";"+data.lattitude+";"+data.longitude+";"+data.millis+"\n"+lines;
+      myFile.print(lines);
     }
     myFile.close(); //enregistrement sur la carte SD. Sans fermer le fichier, celui-ci ne save pas 
     String milli = "m=";  
     Serial.println("Connected : "+String(bleuart.notifyEnabled()));
-    if (bleuart.notifyEnabled()) { //si connecté envoie des données
+    //si connecté envoie des données
+    if (bleuart.notifyEnabled() != 0) { 
       bleuart.print(data.date);
       bleuart.print(data.time);
       bleuart.print(data.pms);
@@ -242,9 +256,4 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
   (void) conn_handle;
   (void) reason;
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
-  myFile = SD.open("test.txt", FILE_WRITE);
-  if (myFile) {
-    myFile.println("end");
-    myFile.close();
-  }
 }

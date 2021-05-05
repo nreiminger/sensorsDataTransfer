@@ -1,4 +1,3 @@
-
 String sensorSPS30() {
   /*
     // RESET device
@@ -29,7 +28,6 @@ String sensorSPS30() {
     Serial.println("clean end");
     delay(100);
   */
-  //while(1){
   String res = "";
   //Read data ready flag
   SetPointer(0x02, 0x02);
@@ -76,66 +74,27 @@ String sensorSPS30() {
     }
     return res;
   }
-
-  // }
-
-  //  Stop Meaurement
-  //  SetPointer(0x01, 0x04);
-
 }
 
-void sensorGPS(Value* data){
-  String date;
-  String time;
-  //date
-  if (gps.date.isValid()) {
-    date = gps.date.day();
-    date += "/";
-    date += gps.date.month();
-    date += "/";
-    date += gps.date.year();
-  }
-  else
-  {
-    date = "0/0/2000";
-  }
-  
-  //time  
-  if (gps.time.isValid())
-  {
-    time = gps.time.hour();
-    time += ":";
-    time += gps.time.minute();
-    time += ":";
-    time += gps.time.second();
-  }
-  else
-  {
-    time = "0:0:0";
-  }
-  
-   //pm
-  String pm = sensorSPS30();
-  if (pm == "") {
-    pm = "A0A0A0";
-  } 
-
-  //location
-  double lt;
-  double lg;
-  if ( gps.location.isValid() && gps.location.age() < 5000 )
-  {
-    lt = gps.location.lat();
-    lg = gps.location.lng();
-  }
-  else
-  {
-    lt = 00.000000;
-    lg = 00.000000;
-  }
-  data->date += date;
-  data->time += time;  
-  data->pms += pm;
-  data->lattitude += lt;
-  data->longitude += lg;
+void SetPointer(byte P1, byte P2)
+{
+  Wire1.beginTransmission(Address);
+  Wire1.write(P1);
+  Wire1.write(P2);
+  Wire1.endTransmission();
+}
+ 
+ 
+// from datasheet:
+byte CalcCrc(byte data[2]) {
+  byte crc = 0xFF;
+  for(int i = 0; i < 2; i++) {    crc ^= data[i];    for(byte bit = 8; bit > 0; --bit) {
+      if(crc & 0x80) {
+      crc = (crc << 1) ^ 0x31u;
+      } else {
+        crc = (crc << 1);
+       }
+     }
+   }
+  return crc;
 }

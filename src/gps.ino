@@ -31,8 +31,6 @@ void sensorGPS(Value* data){
     time += gps.time.minute();
     time += ":";
     time += gps.time.second();
-    time += "+00";
-    
   }
   else
   {
@@ -41,10 +39,12 @@ void sensorGPS(Value* data){
     time = "0:0:0";
   }
     
-  
   data->date += date;
   data->time += time;  
   data->pms += sensorSPS30();
   data->lattitude = lt;
   data->longitude = lg;
+  data->millis += millis();
+
+  
 }

@@ -112,69 +112,67 @@ void loop() {
     Serial.println("*En attente de connexion : " + String(bleuart.notifyEnabled()));
     Serial.println("*Connecter : " + String(bleuart.notifyEnabled()));
     if (bleuart.notifyEnabled()) {
-      //readLastData();
+      readLastData();
       history = false;
     }
   }
   sendData();
 }
-
 void sendData() {
+  // This sketch displays information every time a new sentence is correctly encoded.
   myFile = SD.open("data", FILE_WRITE);
-  if (myFile && Serial1.available() > 0) {
-    //struct ou va etre placé toute
-    if (gps.encode(Serial1.read())) {
-      if (++fixCount > 10) {
-        Value data;
-        (&data)->millis += millis();
-        sensorGPS(&data);
-        if (data.pms != "pm=A0A0A0")
-        {
-          Serial.print(data.date + ";");
-          Serial.print(data.time + ";");
-          Serial.print(data.pms + ";");
-          Serial.print("lt=");
-          Serial.print(data.lattitude, 6); //affichage latitude
-          Serial.print(";");
-          Serial.print("lg=");
-          Serial.print(data.longitude, 6); //affichage latitude
-          Serial.print(";");
-          Serial.println(data.millis);
-          myFile.print(data.date + ";" + data.time + ";" + data.pms + ";");
-          myFile.print("lt=");
-          myFile.print(data.lattitude, 6); //affichage latitude
-          myFile.print(";");
-          myFile.print("lg=");
-          myFile.print(data.longitude, 6); //affichage latitude
-          myFile.print(";");
-          myFile.println(data.millis);
-          myFile.close();
-        }else{
-          Serial.println("POLUTION NULL");
-        }
-        fixCount = 0;
-      }else{
-        Serial.println(fixCount);
+  if (myFile) {
+    if (Serial1.available() > 0){ 
+      if (gps.encode(Serial1.read())){
+          Value data;
+          sensorGPS(&data);
+          if (data.pms != "pm=A0A0A0" && data.pms != "pm="){
+            //verfier que le capteur fonctionne 0-0-0 n'est pas une valeur correct
+            Serial.print(data.date + ";");
+            Serial.print(data.time + "+00;");
+            Serial.print(data.pms + ";");
+            String lat = String(data.lattitude, 6);
+            String lng = String(data.longitude,6);
+            Serial.print("lt="+lat);
+            Serial.print("lg="+lng);
+            Serial.println(data.millis);
+            myFile.print(data.date + ";" + data.time + "+00;" + data.pms + ";");
+            myFile.print("lt="+lat+";");
+            myFile.print("lg="+lng+";");
+            myFile.println(data.millis);
+            myFile.close();
+            
+            String milli = "m=";
+            Serial.println("Connected : "+String(bleuart.notifyEnabled()));
+            //si connecté envoie des données
+            if (bleuart.notifyEnabled() != 0) {
+              bleuart.print(data.date);
+              bleuart.print(data.time+"+00");
+              bleuart.print(data.pms);
+              bleuart.print("lt="+lat);
+              bleuart.print("lg="+lng);
+              bleuart.print(milli);
+           }
+            smartDelay(5000); //delais de 5 secondes avec la prochaine mesure
+          }else{
+            Serial.print("POLUTION NULL : ");
+            Serial.println(data.pms);
+          } 
+       }
       }
     }
-  }
 }
 
-/*
-  }*/
-/*    String milli = "m=";
-    Serial.println("Connected : "+String(bleuart.notifyEnabled()));
-    //si connecté envoie des données
-    /*if (bleuart.notifyEnabled() != 0) {
-      bleuart.print(data.date);
-      bleuart.print(data.time);
-      bleuart.print(data.pms);
-      bleuart.print(data.lattitude);
-      bleuart.print(data.longitude);
-      bleuart.print(milli);
-    }*/
-/*}
-  }*/
+static void smartDelay(unsigned long ms)
+{
+  unsigned long start = millis();
+  do 
+  {
+    while (Serial1.available())
+      gps.encode(Serial1.read());
+  } while (millis() - start < ms);
+}
+
 
 //////////////////////////////////////////////////////////
 /**

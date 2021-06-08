@@ -19,11 +19,16 @@ void sensorGPS(Value* data){
   if (gps.date.isValid() && gps.time.isValid() && gps.date.year() > 2020) {
     digitalWrite(LED_RED,HIGH);   
     //date 
-    date = gps.date.day();
-    date += "/";
+    date = gps.date.year();
+    date += "-";
+    if(gps.date.month() <10)
+    date +="0";
     date += gps.date.month();
-    date += "/";
-    date += gps.date.year();
+    if(gps.date.day() <10)
+    date +="0";
+    date += "-";
+    date += gps.date.day();
+    
     
     //hour
     time = gps.time.hour();

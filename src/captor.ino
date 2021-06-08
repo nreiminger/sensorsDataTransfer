@@ -112,6 +112,7 @@ void loop() {
     Serial.println("*En attente de connexion : " + String(bleuart.notifyEnabled()));
     Serial.println("*Connecter : " + String(bleuart.notifyEnabled()));
     if (bleuart.notifyEnabled()) {
+      Serial.println("HISTORY    ");
       readLastData();
       history = false;
     }

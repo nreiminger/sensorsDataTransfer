@@ -112,6 +112,7 @@ void loop() {
     Serial.println("*En attente de connexion : " + String(bleuart.notifyEnabled()));
     Serial.println("*Connecter : " + String(bleuart.notifyEnabled()));
     if (bleuart.notifyEnabled()) {
+      Serial.println("HISTORY    ");
       readLastData();
       history = false;
     }
@@ -136,7 +137,7 @@ void sendData() {
             Serial.print("lt="+lat);
             Serial.print("lg="+lng);
             Serial.println(data.millis);
-            myFile.print(data.date + ";" + data.time + "%2B00;" + data.pms + ";");
+            myFile.print(data.date + ";" + data.time + "+00;" + data.pms + ";");
             myFile.print("lt="+lat+";");
             myFile.print("lg="+lng+";");
             myFile.println(data.millis);

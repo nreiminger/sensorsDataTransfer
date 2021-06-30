@@ -22,25 +22,19 @@ void sensorGPS(Value* data){
     date = gps.date.year();
     date += "-";
     if(gps.date.month() <10)
-    date += "0";
-    date += gps.date.month(); 
-    date += "-";
+    date +="0";
+    date += gps.date.month();
     if(gps.date.day() <10)
-    date += "0";
+    date +="0";
+    date += "-";
     date += gps.date.day();
-
+    
     
     //hour
-    if(gps.time.hour() <10)
-    date += "0";
-    time += gps.time.hour();
+    time = gps.time.hour();
     time += ":";
-    if(gps.time.minute() <10)
-    date += "0";
     time += gps.time.minute();
     time += ":";
-    if(gps.time.second() <10)
-    date += "0";
     time += gps.time.second();
   }
   else

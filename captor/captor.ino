@@ -33,6 +33,7 @@ uint8_t fixCount = 0;
 
 String name = "RSens.V1."; //permet de donné le debut du nom de l'appareil, il va être complété par un id
 bool history = false; //permet de determiner si on a le droit de recuperer d'historique (stocké sur la carte SD), on ne peux recuperer l'historique que lorsqu'un se connecte.
+int waiting_time;
 
 void setup() {
   //enabling VDD_SW power rail to give 5V source to the dolfin board
@@ -72,6 +73,8 @@ void setup() {
   if (myFile) {
     name += getValue(myFile.readStringUntil('\n'), '=', 1);
     Serial.println(name.c_str());
+    waiting_time = getValue(myFile.readStringUntil('\n'),'=',1).toInt();
+    Serial.println(waiting_time);
     myFile.close();
   } else {
     // if the file didn't open, print an error:
@@ -154,7 +157,7 @@ void sendData() {
               bleuart.print("lg="+lng);
               bleuart.print(milli);
            }
-            smartDelay(5000); //delais de 5 secondes avec la prochaine mesure
+            smartDelay(waiting_time); //delais de x secondes avec la prochaine mesure
           }else{
             Serial.print("POLUTION NULL : ");
             Serial.println(data.pms);
@@ -231,7 +234,6 @@ void connect_callback(uint16_t conn_handle)
 
   char central_name[32] = { 0 };
   connection->getPeerName(central_name, sizeof(central_name));
-
   Serial.print("Connected to ");
   Serial.println(central_name);
   history = true;
@@ -247,4 +249,7 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
   (void) conn_handle;
   (void) reason;
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
+  myFile = SD.open("data", FILE_WRITE);
+  myFile.println("deconnexion");
+  myFile.close();
 }

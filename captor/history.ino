@@ -1,7 +1,4 @@
 void readLastData() {
-  Serial.println("---------"+String(bleuart.notifyEnabled()));
-  // Ouverture de fichier en mode lecture
-    // re-open the file for reading:
   Serial.println("History reading");
   myFile = SD.open("data", FILE_READ);
   bool reading = true; 
@@ -19,7 +16,7 @@ void readLastData() {
           Serial.print(String(getValue(data, ';', i))+";");
           bleuart.print(String(getValue(data, ';', i)));        
     }
-    Serial.println("*******m=0");
+    Serial.println("m=0");
     millis_prec = getValue(mi,'=', 1).toInt();
     while (myFile.available() && reading) {
       String m = "m=";
@@ -27,30 +24,24 @@ void readLastData() {
       String data = readNextLine(myFile.position()-3);
       mi = getValue(data, ';', 5);
       millis_suiv = getValue(mi,'=', 1).toInt();
-      if(millis_prec > millis_suiv && myFile.position() != 1){
+      if(millis_prec > millis_suiv && myFile.position() >= 0 && data != "deconnexion"){
         for (int i = 0; i < 5; i++) {
           Serial.print(String(getValue(data, ';', i))+";");
           bleuart.print(String(getValue(data, ';', i)));
         }
         diffMilli = diffMilli + (millis_prec - millis_suiv);
-        //Serial.print(";");
-        //Serial.print(millis_prec - millis_suiv);
         m += diffMilli;
-        Serial.println("*******"+m);
+        Serial.println(";"+m);
         bleuart.print(m);
-        bleuart.print("*************");
         millis_prec = millis_suiv; 
       }else{
         reading=false;
       }   
   }
   myFile.close();
-  //ecriture d'un flag pour spécifier a quelle endroit est ce qu'on a fini de lire le fichier
+  Serial.println("End history reading");
  }
-  //ecriture d'un flag pour spécifier a quelle endroit est ce qu'on a fini de lire le fichier
 }
-
-
 
 String readNextLine(int pos){
     String line = "";

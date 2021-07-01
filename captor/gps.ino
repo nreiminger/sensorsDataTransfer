@@ -24,9 +24,9 @@ void sensorGPS(Value* data){
     if(gps.date.month() <10)
     date +="0";
     date += gps.date.month();
+    date += "-";
     if(gps.date.day() <10)
     date +="0";
-    date += "-";
     date += gps.date.day();
     
     

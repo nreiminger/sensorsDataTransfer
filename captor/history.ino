@@ -16,7 +16,7 @@ void readLastData() {
           Serial.print(String(getValue(data, ';', i))+";");
           bleuart.print(String(getValue(data, ';', i)));        
     }
-    Serial.println("m=0");
+    bleuart.print("m=0");
     millis_prec = getValue(mi,'=', 1).toInt();
     while (myFile.available() && reading) {
       String m = "m=";
